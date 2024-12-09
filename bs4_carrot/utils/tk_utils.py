@@ -1,11 +1,5 @@
 import tkinter as tk
 
-# 숫자만 입력받기 위한 함수
-def validate_price_input(char):
-    if char.isdigit() or char == "":  # 숫자만 입력 가능
-        return True
-    else:
-        return False
 
 def update_price_label(entry_value, label):
     try:

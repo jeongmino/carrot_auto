@@ -6,7 +6,7 @@ import urllib.parse
 import csv
 import os
 import sys
-from utils.tk_utils import update_price_label, validate_price_input
+from utils.tk_utils import update_price_label
 
 # 지역 목록
 province_list = [
@@ -114,8 +114,13 @@ def on_search():
             print(f"페이지를 가져오는 데 실패했습니다. 상태 코드: {response.status_code}")
             messagebox.showerror("Error", f"페이지를 가져오는 데 실패했습니다. 상태 코드: {response.status_code}")
 
-        for entry in sorted_data_list:  # 정렬된 데이터 출력
-                print(f"가격: {entry['price']} - 제목: {entry['title']} - 지역: {entry['region']}")
+    for entry in sorted_data_list:  # 정렬된 데이터 출력
+            print(f"가격: {entry['price']} - 제목: {entry['title']} - 지역: {entry['region']}")
+
+
+
+def handle_keyword_change(event):
+    keyword = keyword_entry.get()
 
 # Tkinter GUI 설정
 root = tk.Tk()
@@ -134,6 +139,9 @@ keyword_label = tk.Label(root, text="검색 키워드:")
 keyword_label.grid(row=1, column=0, padx=10, pady=10)
 keyword_entry = tk.Entry(root)
 keyword_entry.grid(row=1, column=1, padx=10, pady=10)
+
+keyword_entry.bind("<KeyRelease>", handle_keyword_change)  # 입력 시마다 업데이트
+
 
 # 최소 가격 입력란
 min_price_label = tk.Label(root, text="최소 가격:")
