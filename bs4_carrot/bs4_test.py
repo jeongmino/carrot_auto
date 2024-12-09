@@ -2,11 +2,12 @@ import requests
 from bs4 import BeautifulSoup
 import tkinter as tk
 from tkinter import messagebox
+from tkinter import ttk  # Treeview 위젯을 사용하려면 ttk 모듈이 필요합니다
 import urllib.parse
-import csv
-import os
-import sys
 from utils.tk_utils import update_price_label
+from utils.region_utils import get_resource_path, load_region_data, find_location_ids
+from utils.function_utils import sort_by_price
+
 
 # 지역 목록
 province_list = [
@@ -15,42 +16,12 @@ province_list = [
     "경상남도", "제주특별자치도"
 ]
 
-def get_resource_path(relative_path):
-    """ PyInstaller로 패키징된 실행 파일에서 리소스 경로를 반환 """
-    try:
-        base_path = sys._MEIPASS
-    except AttributeError:
-        base_path = os.path.abspath(".")
-    return os.path.join(base_path, relative_path)
-
 csv_path = get_resource_path("./resource/region.csv")
 
-# CSV 파일에서 지역 데이터 로드
-def load_region_data():
-    with open(csv_path, 'r', encoding='utf-8-sig') as f:
-        reader = csv.DictReader(f)
-        return [row for row in reader]
+region_data = load_region_data(csv_path)
 
-region_data = load_region_data()
-
-def sort_by_price(data_list):
-    # 문자열에서 null 문자를 제거하고, 가격을 정수로 변환하여 정렬
-    for item in data_list:
-        price = item['price'].replace(',', '').replace('원', '').strip()
-        price = price.replace('\x00', '')  # null 문자를 제거
-        try:
-            item['price_int'] = int(price)
-        except ValueError:
-            item['price_int'] = float('inf')  # 가격이 잘못된 항목은 맨 뒤로 보냄
-    return sorted(data_list, key=lambda x: x.get('price_int', float('inf')))
 
 # 선택한 Province에 해당하는 지역 목록 찾기
-def find_location_ids(province, data):
-    location_data = []
-    for row in data:
-        if row["province"] == province:
-            location_data.append({"city": row["region"], "id": row["id"]})
-    return location_data
 
 # 검색 버튼 클릭 시 실행되는 함수
 def on_search():
@@ -110,22 +81,18 @@ def on_search():
             if num_results != '전체':
                 sorted_data_list = sorted_data_list[:int(num_results)]  # 결과 갯수에 맞게 슬라이싱
 
+            # 테이블에 데이터를 추가
+            for entry in sorted_data_list:
+                tree.insert("", "end", values=(entry['price'], entry['title'], entry['region']))  # 테이블에 값 삽입
+
         else:
             print(f"페이지를 가져오는 데 실패했습니다. 상태 코드: {response.status_code}")
             messagebox.showerror("Error", f"페이지를 가져오는 데 실패했습니다. 상태 코드: {response.status_code}")
 
-    for entry in sorted_data_list:  # 정렬된 데이터 출력
-            print(f"가격: {entry['price']} - 제목: {entry['title']} - 지역: {entry['region']}")
-
-
-
-def handle_keyword_change(event):
-    keyword = keyword_entry.get()
-
 # Tkinter GUI 설정
 root = tk.Tk()
 root.title("지역 검색 및 탭 열기")
-root.geometry("500x350")
+root.geometry("700x400")
 
 # 지역 선택 드롭다운 메뉴
 province_var = tk.StringVar(value="서울특별시")
@@ -139,9 +106,6 @@ keyword_label = tk.Label(root, text="검색 키워드:")
 keyword_label.grid(row=1, column=0, padx=10, pady=10)
 keyword_entry = tk.Entry(root)
 keyword_entry.grid(row=1, column=1, padx=10, pady=10)
-
-keyword_entry.bind("<KeyRelease>", handle_keyword_change)  # 입력 시마다 업데이트
-
 
 # 최소 가격 입력란
 min_price_label = tk.Label(root, text="최소 가격:")
@@ -177,6 +141,14 @@ result_count_menu.grid(row=4, column=1, padx=10, pady=10)
 # 검색 버튼
 search_button = tk.Button(root, text="검색", command=on_search)
 search_button.grid(row=5, column=0, columnspan=2, pady=20)
+
+# 테이블을 위한 Treeview 위젯 설정
+columns = ("가격", "제목", "지역")
+tree = ttk.Treeview(root, columns=columns, show="headings")
+tree.heading("가격", text="가격")
+tree.heading("제목", text="제목")
+tree.heading("지역", text="지역")
+tree.grid(row=6, column=0, columnspan=3, padx=10, pady=10)
 
 # 실행
 root.mainloop()
