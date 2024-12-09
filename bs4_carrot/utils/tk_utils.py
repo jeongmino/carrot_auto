@@ -33,3 +33,7 @@ def update_price_label(entry_value, label):
     except ValueError:
         # 숫자가 아닌 값을 입력한 경우 예외 처리
         label.config(text="(잘못된 입력)")
+
+def validate_price_input(char):
+    """ 숫자만 입력 가능하도록 """
+    return char.isdigit() or char == ""
